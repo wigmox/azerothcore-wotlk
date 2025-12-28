@@ -87,6 +87,12 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_CXX_STANDARD=17
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON
+        -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON # 直接干掉PCH，报错源头彻底消除，核心中的核心
+        -DCMAKE_CXX_FLAGS="-stdlib=libc++ -D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS"  # 强制用Clang标准库，脱离GCC依赖
+        -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi"  # 链接时也绑定Clang库，避免链接报错
         -S ${{ github.workspace }}
 
     - name: Build
