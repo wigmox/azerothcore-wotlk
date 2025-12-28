@@ -17,8 +17,8 @@ jobs:
         # the result of the matrix will be the combination of all attributes, so we get os*compiler builds
         include:
           - os: ubuntu-22.04-arm
-            c_compiler: clang-14.0.0
-            cpp_compiler: clang++-14.0.0
+            c_compiler: /usr/bin/clang
+            cpp_compiler: /usr/bin/clang++
             build_type: Release
           - os: ubuntu-22.04-arm
             c_compiler: gcc
@@ -87,7 +87,6 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_CXX_STANDARD=clang++-14.0.0
         -S ${{ github.workspace }}
 
     - name: Build
