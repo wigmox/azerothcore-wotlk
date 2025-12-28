@@ -82,11 +82,14 @@ jobs:
      # 2. 关键：自动注入兼容宏（不用手动改本地源码，脚本内直接修改文件，根治chrono报错）
     - name: Inject FMT Compatibility Macro (Fix ARM64 Chrono Error)
       if: contains(matrix.os, 'arm')
+       # shell: /usr/bin/bash -e {0}
       run: |
-        # 给StringFormat.h头部插入宏定义，精准命中报错文件
-        sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/Utilities/StringFormat.h
-        # 兜底：给PCH头文件也插入，双重保险
-        sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/PrecompiledHeaders/commonPCH.h
+       # 1. StringFormat.h：开头+精准行都插
+       sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/Utilities/StringFormat.h
+       sed -i '/#include <fmt\/chrono\.h>/i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/Utilities/StringFormat.h
+       # 2. commonPCH.h：开头+精准行都插
+       sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/PrecompiledHeaders/commonPCH.h
+       sed -i '/#include "\.\.\/Utilities\/StringFormat\.h"/i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/PrecompiledHeaders/commonPCH.h
         
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
