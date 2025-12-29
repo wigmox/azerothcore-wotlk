@@ -17,8 +17,8 @@ jobs:
         # the result of the matrix will be the combination of all attributes, so we get os*compiler builds
         include:
           - os: ubuntu-22.04-arm
-            c_compiler: clang-17
-            cpp_compiler: clang++-17
+            c_compiler: clang-20
+            cpp_compiler: clang++-20
             build_type: Release
           - os: ubuntu-22.04-arm
             c_compiler: gcc
@@ -55,11 +55,12 @@ jobs:
     
     - name: Install Requirements
       run: |
+        clang --version
         sudo apt-get update
         sudo apt-get install -y wget software-properties-common
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 17  # 安装 Clang 17
+        sudo ./llvm.sh 20  # 安装 Clang 20
         sudo apt-get install -y git cmake make gcc g++ libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
       
     # - name: Cache
@@ -91,8 +92,8 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_C_FLAGS="-UHAVE_SSE2"
-        -DCMAKE_CXX_FLAGS="-UHAVE_SSE2"
+        -DCMAKE_C_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
+        -DCMAKE_CXX_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
         -DWITH_WARNINGS=0
         -S ${{ github.workspace }}
 
