@@ -16,17 +16,17 @@ jobs:
       matrix:
         # the result of the matrix will be the combination of all attributes, so we get os*compiler builds
         include:
-          - os: ubuntu-22.04-arm
+          - os: ubuntu-24.04-arm
             c_compiler: clang-20
             cpp_compiler: clang++-20
             build_type: Release
           - os: ubuntu-22.04-arm
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-14
+            cpp_compiler: g++-14
             build_type: Release
           - os: ubuntu-24.04-arm
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-14
+            cpp_compiler: g++-14
             build_type: Release
             
     runs-on: ${{ matrix.os }}
@@ -54,7 +54,7 @@ jobs:
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
 
     - name: Checkout Playerbot Module
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: 'mod-playerbots/mod-playerbots'
         #ref: 'feature/core_update_10_2025' #used on core merge conflicts builds
@@ -82,7 +82,7 @@ jobs:
         git clone https://github.com/azerothcore/mod-guildhouse
         git clone https://github.com/azerothcore/mod-keep-out
     
-    - name: Install Clang
+    - name: Install Clang to Version 20
       run: |
         clang --version
         # sudo apt-get purge -y clang-* llvm-*
@@ -93,13 +93,19 @@ jobs:
         sudo ./llvm.sh 20 all  # 安装 Clang 20
         clang --version  # 应输出 Clang 20.x 版本信息
         which clang      # 输出路径应为 /usr/bin/clang（指向 Clang 20）
-    
+        
+    - name: Update GCC to Version 14
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        sudo apt-get install -y gcc-14 g++-14
+        # 设置默认编译器指向 v14
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14
+        
     - name: Install Requirements
       run: |
         sudo apt-get update
-        sudo apt-get install -y git cmake make gcc g++ libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
-        clang --version  # 应输出 Clang 20.x 版本信息
-        which clang      # 输出路径应为 /usr/bin/clang（指向 Clang 20）
+        sudo apt-get install -y git cmake make libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
 
     # - name: Cache
     #   uses: actions/cache@v3
@@ -124,30 +130,14 @@ jobs:
     # - name: Build
     #   run: source ./apps/ci/ci-compile.sh
 
-    - name: Clean build directory
-      run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
-
-    # 关键修复：物理抹除所有 SSE/x86 相关的触发条件
-    - name: Fix ARM SIMD Conflict
-      run: |
-        cd /home/azerothcore-wotlk
-        # 1. 彻底禁用 SFMT 的 SSE 逻辑
-        sed -i 's/add_definitions(-msse2 -DHAVE_SSE2)//g' deps/SFMT/CMakeLists.txt
-        sed -i 's/#define HAVE_SSE2 1/\/\/ #define HAVE_SSE2 1/g' deps/SFMT/SFMT.c
-        # 2. 移除整个核心中可能强行添加的 x86 指令集参数
-        find . -name "CMakeLists.txt" -exec sed -i 's/-msse2//g' {} +
-        find . -name "CMakeLists.txt" -exec sed -i 's/-msse3//g' {} +
-
     - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DUSE_SFMT_SSE2=OFF
-        -DWITH_WARNINGS=0
-        -DCMAKE_C_FLAGS="-fPIC"
-        -DCMAKE_CXX_FLAGS="-fPIC"
         -S /home/azerothcore-wotlk
 
     - name: Build
@@ -168,7 +158,7 @@ jobs:
     - name: Package Files
       # 进入目录并压缩
       run: |
-        cd /home/azerothcore-wotlk/dist
+        cd /home/azerothcore-wotlk/build
         # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}.tar.gz .
 
