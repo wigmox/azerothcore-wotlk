@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout AzerothCore
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -52,6 +52,28 @@ jobs:
         repository: 'mod-playerbots/mod-playerbots'
         #ref: 'feature/core_update_10_2025' #used on core merge conflicts builds
         path: 'modules/mod-playerbots'
+    
+    - name: Clone Modules
+      run: |
+        cd modules
+        git clone https://github.com/azerothcore/mod-ale.git
+        git clone https://github.com/azerothcore/mod-anticheat
+        git clone https://github.com/azerothcore/mod-aoe-loot
+        git clone https://github.com/webluke/mod-grownup
+        git clone https://github.com/azerothcore/mod-ip-tracker
+        git clone https://github.com/azerothcore/mod-multi-client-check
+        git clone https://github.com/azerothcore/mod-pvp-titles
+        git clone https://github.com/pangolp/mod-recruit-friend
+        git clone https://github.com/azerothcore/mod-server-auto-shutdown
+        git clone https://github.com/azerothcore/mod-who-logged
+        git clone https://github.com/azerothcore/mod-transmog
+        git clone https://github.com/noisiver/mod-weekendbonus
+        git clone https://github.com/azerothcore/mod-autobalance
+        git clone https://github.com/azerothcore/mod-solocraft
+        git clone https://github.com/azerothcore/mod-solo-lfg
+        git clone https://github.com/azerothcore/mod-learn-spells
+        git clone https://github.com/azerothcore/mod-guildhouse
+        git clone https://github.com/azerothcore/mod-keep-out
     
     - name: Install Clang
       run: |
@@ -98,6 +120,16 @@ jobs:
     - name: Clean build directory
       run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
 
+    - name: Disable SSE for SFMT (ARM Fix)
+      run: |
+        sed -i 's/add_definitions(-msse2 -DHAVE_SSE2)//g' deps/SFMT/CMakeLists.txt
+        sed -i 's/#define HAVE_SSE2 1/\/\/ #define HAVE_SSE2 1/g' deps/SFMT/SFMT.c
+
+    - name: Set reusable strings
+      #id: strings
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -105,8 +137,8 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DUSE_SFMT_SSE2=OFF
-        -DCMAKE_C_FLAGS="-msse2=0 -DHAVE_SSE2=0 -UHAVE_SSE2"
-        -DCMAKE_CXX_FLAGS="-msse2=0 -DHAVE_SSE2=0 -UHAVE_SSE2"
+        -DCMAKE_C_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
+        -DCMAKE_CXX_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
         -DWITH_WARNINGS=0
         -S ${{ github.workspace }}
 
