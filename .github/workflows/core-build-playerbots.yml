@@ -53,7 +53,7 @@ jobs:
         #ref: 'feature/core_update_10_2025' #used on core merge conflicts builds
         path: 'modules/mod-playerbots'
     
-        - name: Install Clang
+    - name: Install Clang
       run: |
         echo: Clang Version
         clang --version
