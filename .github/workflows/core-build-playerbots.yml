@@ -105,6 +105,8 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DUSE_SFMT_SSE2=OFF
+        -DCMAKE_C_FLAGS="-msse2=0 -DHAVE_SSE2=0 -UHAVE_SSE2"
+        -DCMAKE_CXX_FLAGS="-msse2=0 -DHAVE_SSE2=0 -UHAVE_SSE2"
         -DWITH_WARNINGS=0
         -S ${{ github.workspace }}
 
