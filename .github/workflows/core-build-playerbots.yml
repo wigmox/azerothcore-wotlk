@@ -41,6 +41,13 @@ jobs:
       id: strings
       shell: bash
       run: |
+        # 强制创建 /home/azerothcore-wotlk 指向当前工作目录
+        # 注意：在 GitHub 托管服务器上通常需要 sudo 来操作 /home 目录
+        sudo ln -s ${{ github.workspace }} /home/azerothcore-wotlk
+        # 验证路径
+        ls -d /home/azerothcore-wotlk
+        echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
+
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
         
     # - name: Clone Playerbot Module
@@ -125,11 +132,6 @@ jobs:
         sed -i 's/add_definitions(-msse2 -DHAVE_SSE2)//g' deps/SFMT/CMakeLists.txt
         sed -i 's/#define HAVE_SSE2 1/\/\/ #define HAVE_SSE2 1/g' deps/SFMT/SFMT.c
 
-    - name: Set reusable strings
-      #id: strings
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -140,7 +142,7 @@ jobs:
         -DCMAKE_C_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
         -DCMAKE_CXX_FLAGS="-UHAVE_SSE2 -UHAVE_SSE3"
         -DWITH_WARNINGS=0
-        -S ${{ github.workspace }}
+        -S /home/azerothcore-wotlk
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -151,3 +153,34 @@ jobs:
     #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
+    
+    - name: Install Core
+      # 将编译好的文件安装到自定义目录，方便打包
+      run: |
+        sudo cmake --install ${{ steps.strings.outputs.build-output-dir }} --prefix /home/azerothcore-wotlk/dist
+
+    - name: Package Files
+      # 进入目录并压缩
+      run: |
+        cd /home/azerothcore-wotlk/dist
+        # 创建压缩包，包含时间戳以区分版本
+        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}.tar.gz .
+
+    - name: Generate Release Tag
+      id: tag
+      run: |
+        echo "release_tag=build-$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/heads/Playerbot') # 仅在 Playerbot 分支推送时触发发布
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        name: AzerothCore ARM64 Build ${{ steps.tag.outputs.release_tag }}
+        draft: false
+        prerelease: false
+        files: |
+          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
