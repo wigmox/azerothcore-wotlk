@@ -61,7 +61,7 @@ jobs:
         sudo apt-get install -y wget software-properties-common
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 20  # 安装 Clang 20
+        sudo ./llvm.sh 20 all  # 安装 Clang 20
         clang --version  # 应输出 Clang 20.x 版本信息
         which clang      # 输出路径应为 /usr/bin/clang（指向 Clang 20）
     
@@ -94,7 +94,10 @@ jobs:
       
     # - name: Build
     #   run: source ./apps/ci/ci-compile.sh
-        
+
+    - name: Clean build directory
+      run: rm -rf ${{ steps.strings.outputs.build-output-dir }}
+
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -102,10 +105,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DUSE_SFMT_SSE2=OFF
-        -DHAVE_SSE2=OFF
-        -DHAVE_SSE3=OFF
-        -DCMAKE_C_FLAGS="-UHAVE_SSE2"
-        -DCMAKE_CXX_FLAGS="-UHAVE_SSE2"
         -DWITH_WARNINGS=0
         -S ${{ github.workspace }}
 
