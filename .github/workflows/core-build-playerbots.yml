@@ -4,9 +4,9 @@ name: ubuntu-build
 
 on:
   push:
-    branches: [ "Playerbot" ]
+    分支: [ "Playerbot" ]
   pull_request:
-    branches: [ "Playerbot" ]
+    分支: [ "Playerbot" ]
 
 jobs:
   build:
@@ -16,15 +16,15 @@ jobs:
       matrix:
         # the result of the matrix will be the combination of all attributes, so we get os*compiler builds
         include:
-          - os: ubuntu-22.04-arm
-            c_compiler: /usr/bin/clang
-            cpp_compiler: /usr/bin/clang++
+          - os: ubuntu-22.04
+            c_compiler: clang
+            cpp_compiler: clang++
             build_type: Release
-          - os: ubuntu-22.04-arm
+          - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
             build_type: Release
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
             build_type: Release
@@ -54,7 +54,7 @@ jobs:
         path: 'modules/mod-playerbots'
     
     - name: Install Requirements
-      run: sudo apt-get update && sudo apt-get install git cmake make gcc-12 g++-12 clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
+      run: sudo apt-get update && sudo apt-get install git cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
       
     # - name: Cache
     #   uses: actions/cache@v3
@@ -78,18 +78,6 @@ jobs:
       
     # - name: Build
     #   run: source ./apps/ci/ci-compile.sh
-
-     # 2. 关键：自动注入兼容宏（不用手动改本地源码，脚本内直接修改文件，根治chrono报错）
-    - name: Inject FMT Compatibility Macro (Fix ARM64 Chrono Error)
-      if: contains(matrix.os, 'arm')
-       # shell: /usr/bin/bash -e {0}
-      run: |
-       # 1. StringFormat.h：开头+精准行都插
-       sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/Utilities/StringFormat.h
-       sed -i '/#include <fmt\/chrono\.h>/i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/Utilities/StringFormat.h
-       # 2. commonPCH.h：开头+精准行都插
-       sed -i '1i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/PrecompiledHeaders/commonPCH.h
-       sed -i '/#include "\.\.\/Utilities\/StringFormat\.h"/i #define FMT_DISABLE_CHRONO_HH_MM_SS' ${{ github.workspace }}/src/common/PrecompiledHeaders/commonPCH.h
         
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -99,7 +87,6 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_CXX_STANDARD=17
         -S ${{ github.workspace }}
 
     - name: Build
