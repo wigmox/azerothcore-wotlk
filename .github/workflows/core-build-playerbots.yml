@@ -4,9 +4,9 @@ name: ubuntu-build
 
 on:
   push:
-    分支: [ "Playerbot" ]
+    branches: [ "Playerbot" ]
   pull_request:
-    分支: [ "Playerbot" ]
+    branches: [ "Playerbot" ]
 
 jobs:
   build:
@@ -91,8 +91,8 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DHAVE_SSE2=0
-        -DHAVE_SSE2__=0
+        -DCMAKE_C_FLAGS="-UHAVE_SSE2 -D__ARM_NEON"
+        -DCMAKE_CXX_FLAGS="-UHAVE_SSE2 -D__ARM_NEON"
         -DWITH_WARNINGS=0
         -S ${{ github.workspace }}
 
