@@ -55,7 +55,6 @@ jobs:
     
     - name: Install Clang
       run: |
-        echo: Clang Version
         clang --version
         sudo apt-get purge -y clang-* llvm-*
         sudo apt-get update
