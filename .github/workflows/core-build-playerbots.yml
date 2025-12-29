@@ -56,7 +56,7 @@ jobs:
     - name: Install Clang
       run: |
         clang --version
-        sudo apt-get purge -y clang-* llvm-*
+        # sudo apt-get purge -y clang-* llvm-*
         sudo apt-get update
         sudo apt-get install -y wget software-properties-common
         wget https://apt.llvm.org/llvm.sh
