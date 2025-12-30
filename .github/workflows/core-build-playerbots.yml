@@ -129,8 +129,8 @@ jobs:
     #   run: ctest --build-config ${{ matrix.build_type }}
 
     - name: Make install
-      cd ${{ steps.strings.outputs.build-output-dir }}
-      make install
+        cd ${{ steps.strings.outputs.build-output-dir }}
+        make install
 
     - name: Package Files SOURCE
       # 进入目录并压缩
@@ -138,6 +138,7 @@ jobs:
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz \
+            --exclude='./build' \
             --exclude='./assets' \
             -C ${{ github.workspace }} .
         
