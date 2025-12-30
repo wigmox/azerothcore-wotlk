@@ -40,6 +40,7 @@ jobs:
         ls /home/azerothcore-wotlk
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
         echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
         
     # - name: Clone Playerbot Module
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
