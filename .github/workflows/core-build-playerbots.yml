@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: ubuntu-build-playerbot
+name: ubuntu-build
 
 on:
   push:
@@ -36,14 +36,10 @@ jobs:
         # 强制创建 /home/azerothcore-wotlk 指向当前工作目录
         # 注意：在 GitHub 托管服务器上通常需要 sudo 来操作 /home 目录
         sudo ln -s ${{ github.workspace }} /home/azerothcore-wotlk
-        # 验证路径
-        ls /home/azerothcore-wotlk
-        echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
         echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
         echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
-        
-    # - name: Clone Playerbot Module
-    #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
+        # 创建 assets 目录防止后续打包报错
+        mkdir -p ${{ github.workspace }}/assets
 
     - name: Clone All Modules
       run: |
@@ -74,7 +70,6 @@ jobs:
         azerothcore/mod-keep-out
         azerothcore/mod-gain-honor-guard
         "
-
         # 循环下载
         for repo in $REPOS; do
           # 自动获取斜杠后的名称作为文件夹名
@@ -92,34 +87,24 @@ jobs:
         ls -l
     
     - name: Install Requirements
-      run: sudo apt-get update && sudo apt-get install git cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
+      run: |
+        sudo apt-get update 
+        sudo apt-get install -y git cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev ccache
 
-    # - name: Cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: var/ccache
-    #     key: ccache:${{ matrix.os }}:${{ matrix.compiler }}:${{ matrix.modules }}-modules:${{ github.ref }}:${{ github.sha }}
-    #     restore-keys: |
-    #       ccache:${{ matrix.os }}:${{ matrix.compiler }}:${{ matrix.modules }}-modules:${{ github.ref }}
-    #       ccache:${{ matrix.os }}:${{ matrix.compiler }}:${{ matrix.modules }}-modules
-            
-    # - name: Configure OS
-    #   run: source ./acore.sh install-deps
-    #   env:
-    #     CONTINUOUS_INTEGRATION: true
-        
-    # - name: Create conf/config.sh
-    #   run: source ./apps/ci/ci-conf-core.sh
-      
-    # - name: Process pending sql
-    #   run: bash bin/acore-db-pendings
-      
-    # - name: Build
-    #   run: source ./apps/ci/ci-compile.sh
+    # 启用并优化缓存配置
+    - name: Setup Cache for ccache
+      uses: actions/cache@v4 # 建议使用 v4 版本
+      with:
+        path: ${{ github.workspace }}/.ccache
+        key: ccache-${{ matrix.os }}-${{ matrix.cpp_compiler }}-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ matrix.os }}-${{ matrix.cpp_compiler }}-${{ github.ref }}-
+          ccache-${{ matrix.os }}-${{ matrix.cpp_compiler }}-
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      env:
+        CCACHE_DIR: ${{ github.workspace }}/.ccache
+        CCACHE_MAXSIZE: "2G"
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -130,19 +115,17 @@ jobs:
         -DTOOLS_BUILD=all 
         -DSCRIPTS=static 
         -DMODULES=static
-        -DCMAKE_INSTALL_PREFIX= ${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
+        -DENABLE_CCACHE=ON
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        -DCMAKE_C_COMPILER_LAUNCHER=ccache
+        -DCMAKE_INSTALL_PREFIX=${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
         -DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
-        -DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
+        -DCMAKE_C_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
 
     - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-    # - name: Test
-    #   working-directory: ${{ steps.strings.outputs.build-output-dir }}
-    #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-    #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-    #   run: ctest --build-config ${{ matrix.build_type }}
+      env:
+        CCACHE_DIR: ${{ github.workspace }}/.ccache
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
 
     - name: Make install
       run: |
@@ -150,48 +133,38 @@ jobs:
         sudo make install
 
     - name: Package Files SOURCE
-      # 进入目录并压缩
       run: |
-        cd  ${{ steps.strings.outputs.build-workspace-dir }}
-        # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz \
             --exclude='./build' \
             --exclude='./assets' \
+            --exclude='./.ccache' \
             -C ${{ github.workspace }} .
         
     - name: Package Files
-      # 进入目录并压缩
       run: |
-        cd  ${{ steps.strings.outputs.build-output-dir }} 
-        # 创建压缩包，包含时间戳以区分版本
+        cd ${{ steps.strings.outputs.build-output-dir }} 
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz \
-            -C ${{ github.workspace }}/build .
+            -C ${{ steps.strings.outputs.build-output-dir }} .
 
     - name: Generate Release Tag
       id: tag
       run: |
         echo "release_tag=build-$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
 
-    # 方式 A：上传为 Actions Artifacts (方便在 Actions 页面直接点击下载)
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: azerothcore-packages
         path: ${{ github.workspace }}/assets/*.tar.gz
         
-        
-    # 方式 B：正式发布到 GitHub Release
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/heads/Playerbot') # 仅在 Playerbot 分支推送时触发发布
+      if: startsWith(github.ref, 'refs/heads/Playerbot')
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         name: AzerothCore ARM64 Build ${{ steps.tag.outputs.release_tag }}
-        draft: false
-        prerelease: false
         files: |
-          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
-          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
+          ${{ github.workspace }}/assets/*.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
