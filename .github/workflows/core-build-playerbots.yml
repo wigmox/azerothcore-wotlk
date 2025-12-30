@@ -131,7 +131,7 @@ jobs:
     - name: Make install
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
-        make install
+        sudo make install
 
     - name: Package Files SOURCE
       # 进入目录并压缩
