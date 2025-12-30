@@ -4,9 +4,9 @@ name: ubuntu-build
 
 on:
   push:
-    branches: [ "Playerbot" ]
+    分支: [ "Playerbot" ]
   pull_request:
-    branches: [ "Playerbot" ]
+    分支: [ "Playerbot" ]
 
 jobs:
   build:
@@ -41,6 +41,7 @@ jobs:
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
         echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
         echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
+        echo "output-dir=/home/runner/work/output" >> "$GITHUB_OUTPUT"
         
     # - name: Clone Playerbot Module
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
@@ -122,8 +123,9 @@ jobs:
       run: |
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
+        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz .
         
+
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
@@ -133,13 +135,20 @@ jobs:
     #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
-    
+
+    - name: Package Files SOURCE
+      # 进入目录并压缩
+      run: |
+        cd  ${{ steps.strings.outputs.build-workspace-dir }}
+        # 创建压缩包，包含时间戳以区分版本
+        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
+        
     - name: Package Files
       # 进入目录并压缩
       run: |
         cd  ${{ steps.strings.outputs.build-output-dir }} 
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz .
+        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz .
 
     - name: Generate Release Tag
       id: tag
@@ -155,8 +164,9 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
-          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
+          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
+          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
+          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
