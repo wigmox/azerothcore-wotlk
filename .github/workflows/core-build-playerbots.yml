@@ -118,20 +118,6 @@ jobs:
         #-DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
         #-DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
 
-    - name: Package Files SOURCE
-      # 进入目录并压缩
-      run: |
-        # 创建一个临时存放压缩包的目录
-        mkdir -p ${{ github.workspace }}/assets
-        cd  ${{ steps.strings.outputs.build-workspace-dir }}
-        # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz \
-            --exclude='./build' \
-            --exclude='./.git' \
-            --exclude='./assets' \
-            -C ${{ github.workspace }} .
-        
-
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
@@ -148,8 +134,6 @@ jobs:
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz \
-            --exclude='./build' \
-            --exclude='./.git' \
             --exclude='./assets' \
             -C ${{ github.workspace }} .
         
@@ -186,7 +170,6 @@ jobs:
         files: |
           ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
           ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
-          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
