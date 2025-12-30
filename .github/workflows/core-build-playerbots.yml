@@ -126,8 +126,9 @@ jobs:
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz \
-            # --exclude='./build' \
+            --exclude='./build' \
             --exclude='./.git' \
+            --exclude='./assets' \
             -C ${{ github.workspace }} .
         
 
@@ -149,6 +150,7 @@ jobs:
         tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz \
             --exclude='./build' \
             --exclude='./.git' \
+            --exclude='./assets' \
             -C ${{ github.workspace }} .
         
     - name: Package Files
