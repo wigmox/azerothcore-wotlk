@@ -39,8 +39,8 @@ jobs:
         # 验证路径
         ls -d /home/azerothcore-wotlk
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
-
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
         
     # - name: Clone Playerbot Module
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
@@ -54,7 +54,7 @@ jobs:
     
     - name: Clone Modules
       run: |
-        cd modules
+        cd  ${{ github.workspace }}/modules
         git clone https://github.com/azerothcore/mod-ale.git
         git clone https://github.com/azerothcore/mod-anticheat
         git clone https://github.com/azerothcore/mod-aoe-loot
@@ -108,11 +108,14 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+        -S ${{ build-workspace-dir }}
         -DWITH_WARNINGS=1 
         -DTOOLS_BUILD=all 
         -DSCRIPTS=static 
         -DMODULES=static
+        -DCMAKE_INSTALL_PREFIX= ${{ build-workspace-dir }}/env/dist/
+        #-DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ build-workspace-dir }}=/home/azerothcore-wotlk"
+        #-DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ build-workspace-dir }}=/home/azerothcore-wotlk"
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -127,9 +130,12 @@ jobs:
     - name: Package Files
       # 进入目录并压缩
       run: |
+        cd  ${{ build-workspace-dir }}
+        # 创建压缩包，包含时间戳以区分版本
+        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-all.tar.gz .
         cd  ${{ steps.strings.outputs.build-output-dir }} 
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}.tar.gz .
+        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz .
 
     - name: Generate Release Tag
       id: tag
@@ -145,7 +151,8 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}.tar.gz
+          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
+          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-all.tar.gz .
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
