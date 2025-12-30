@@ -45,35 +45,51 @@ jobs:
     # - name: Clone Playerbot Module
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
 
-    - name: Checkout Playerbot Module
-      uses: actions/checkout@v4
-      with:
-        repository: 'mod-playerbots/mod-playerbots'
-        #ref: 'feature/core_update_10_2025' #used on core merge conflicts builds
-        path: 'modules/mod-playerbots'
-    
-    - name: Clone Modules
+    - name: Clone All Modules
       run: |
-        cd  ${{ github.workspace }}/modules
-        git clone https://github.com/azerothcore/mod-ale.git
-        git clone https://github.com/azerothcore/mod-anticheat
-        git clone https://github.com/azerothcore/mod-aoe-loot
-        git clone https://github.com/webluke/mod-grownup
-        git clone https://github.com/azerothcore/mod-ip-tracker
-        git clone https://github.com/azerothcore/mod-multi-client-check
-        git clone https://github.com/azerothcore/mod-pvp-titles
-        git clone https://github.com/pangolp/mod-recruit-friend
-        git clone https://github.com/azerothcore/mod-server-auto-shutdown
-        git clone https://github.com/azerothcore/mod-who-logged
-        git clone https://github.com/azerothcore/mod-transmog
-        git clone https://github.com/noisiver/mod-weekendbonus
-        git clone https://github.com/azerothcore/mod-autobalance
-        git clone https://github.com/azerothcore/mod-solocraft
-        git clone https://github.com/azerothcore/mod-solo-lfg
-        git clone https://github.com/azerothcore/mod-learn-spells
-        git clone https://github.com/azerothcore/mod-guildhouse
-        git clone https://github.com/azerothcore/mod-keep-out
-        git clone https://github.com/azerothcore/mod-gain-honor-guard
+        # 切换到 modules 目录（如果不存在则创建）
+        mkdir -p ${{ github.workspace }}/modules
+        cd ${{ github.workspace }}/modules
+
+        # 定义所有模块列表 (格式：用户名/仓库名)
+        REPOS="
+        mod-playerbots/mod-playerbots
+        azerothcore/mod-ale
+        azerothcore/mod-anticheat
+        azerothcore/mod-aoe-loot
+        webluke/mod-grownup
+        azerothcore/mod-ip-tracker
+        azerothcore/mod-multi-client-check
+        azerothcore/mod-pvp-titles
+        pangolp/mod-recruit-friend
+        azerothcore/mod-server-auto-shutdown
+        azerothcore/mod-who-logged
+        azerothcore/mod-transmog
+        noisiver/mod-weekendbonus
+        azerothcore/mod-autobalance
+        azerothcore/mod-solocraft
+        azerothcore/mod-solo-lfg
+        azerothcore/mod-learn-spells
+        azerothcore/mod-guildhouse
+        azerothcore/mod-keep-out
+        azerothcore/mod-gain-honor-guard
+        "
+
+        # 循环下载
+        for repo in $REPOS; do
+          # 自动获取斜杠后的名称作为文件夹名
+          dir_name=$(echo $repo | cut -d'/' -f2)
+          
+          echo "------------------------------------------------------"
+          echo "📡 正在快速克隆: $repo"
+          
+          # 使用 --depth 1 极大提高 Actions 运行速度
+          git clone --depth 1 --single-branch https://github.com/$repo.git "$dir_name"
+        done
+        
+        echo "------------------------------------------------------"
+        echo "✅ 所有模块下载完成！内容如下："
+        ls -l
     
     - name: Install Requirements
       run: sudo apt-get update && sudo apt-get install git cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
