@@ -4,9 +4,9 @@ name: ubuntu-build
 
 on:
   push:
-    分支: [ "Playerbot" ]
+    branches: [ "Playerbot" ]
   pull_request:
-    分支: [ "Playerbot" ]
+    branches: [ "Playerbot" ]
 
 jobs:
   build:
@@ -36,13 +36,10 @@ jobs:
         # 强制创建 /home/azerothcore-wotlk 指向当前工作目录
         # 注意：在 GitHub 托管服务器上通常需要 sudo 来操作 /home 目录
         sudo ln -s ${{ github.workspace }} /home/azerothcore-wotlk
-        sudo mkdir /home/runner/work/output
         # 验证路径
         ls /home/azerothcore-wotlk
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
         echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
-        echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
-        echo "output-dir=/home/runner/work/output" >> "$GITHUB_OUTPUT"
         
     # - name: Clone Playerbot Module
     #   run: git clone --depth=1 --branch=master https://github.com/mod-playerbots/mod-playerbots.git modules/mod-playerbots
@@ -75,6 +72,7 @@ jobs:
         git clone https://github.com/azerothcore/mod-learn-spells
         git clone https://github.com/azerothcore/mod-guildhouse
         git clone https://github.com/azerothcore/mod-keep-out
+        git clone https://github.com/azerothcore/mod-gain-honor-guard
     
     - name: Install Requirements
       run: sudo apt-get update && sudo apt-get install git cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev
@@ -122,9 +120,14 @@ jobs:
     - name: Package Files SOURCE
       # 进入目录并压缩
       run: |
+        # 创建一个临时存放压缩包的目录
+        mkdir -p ${{ github.workspace }}/assets
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz .
+        tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz \
+            # --exclude='./build' \
+            --exclude='./.git' \
+            -C ${{ github.workspace }} .
         
 
     - name: Build
@@ -142,20 +145,33 @@ jobs:
       run: |
         cd  ${{ steps.strings.outputs.build-workspace-dir }}
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
+        tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz \
+            --exclude='./build' \
+            --exclude='./.git' \
+            -C ${{ github.workspace }} .
         
     - name: Package Files
       # 进入目录并压缩
       run: |
         cd  ${{ steps.strings.outputs.build-output-dir }} 
         # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz .
+        tar -czvf ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz \
+            -C ${{ github.workspace }}/build .
 
     - name: Generate Release Tag
       id: tag
       run: |
         echo "release_tag=build-$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
 
+    # 方式 A：上传为 Actions Artifacts (方便在 Actions 页面直接点击下载)
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: azerothcore-packages
+        path: ${{ github.workspace }}/assets/*.tar.gz
+        
+        
+    # 方式 B：正式发布到 GitHub Release
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/heads/Playerbot') # 仅在 Playerbot 分支推送时触发发布
@@ -165,9 +181,9 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
-          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
-          ${{ steps.strings.outputs.output-dir }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz
+          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
+          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
+          ${{ github.workspace }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source-cmark.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
