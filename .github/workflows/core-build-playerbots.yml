@@ -129,6 +129,7 @@ jobs:
     #   run: ctest --build-config ${{ matrix.build_type }}
 
     - name: Make install
+      run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
         make install
 
