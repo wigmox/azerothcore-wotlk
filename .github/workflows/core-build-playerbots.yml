@@ -115,8 +115,8 @@ jobs:
         -DSCRIPTS=static 
         -DMODULES=static
         -DCMAKE_INSTALL_PREFIX= ${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
-        #-DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
-        #-DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
+        -DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
+        -DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -127,6 +127,10 @@ jobs:
     #   # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Make install
+      cd ${{ steps.strings.outputs.build-output-dir }}
+      make install
 
     - name: Package Files SOURCE
       # 进入目录并压缩
