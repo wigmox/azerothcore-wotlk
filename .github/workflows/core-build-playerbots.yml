@@ -156,7 +156,7 @@ jobs:
         prerelease: false
         files: |
           ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
-          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
+          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
