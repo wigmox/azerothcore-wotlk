@@ -36,6 +36,7 @@ jobs:
         # 强制创建 /home/azerothcore-wotlk 指向当前工作目录
         # 注意：在 GitHub 托管服务器上通常需要 sudo 来操作 /home 目录
         sudo ln -s ${{ github.workspace }} /home/azerothcore-wotlk
+        sudo mkdir /home/runner/work/output
         # 验证路径
         ls /home/azerothcore-wotlk
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
