@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: ubuntu-build
+name: ubuntu-build-playerbot
 
 on:
   push:
@@ -131,6 +131,16 @@ jobs:
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
         sudo make install
+            
+    - name: Package Files BIN
+      run: |
+        # 进入工作区根目录
+        cd ${{ steps.strings.outputs.build-workspace-dir }}
+        
+        # 打包时包含 env 目录
+        # 这样解压后会得到一个名为 env 的文件夹，里面包含 dist 以及所有子文件夹
+        tar -czvf  ${{ steps.strings.outputs.build-workspace-dir }}/assets/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-bin.tar.gz \
+            env/dist
 
     - name: Package Files SOURCE
       run: |
