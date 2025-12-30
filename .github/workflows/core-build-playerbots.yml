@@ -37,7 +37,7 @@ jobs:
         # 注意：在 GitHub 托管服务器上通常需要 sudo 来操作 /home 目录
         sudo ln -s ${{ github.workspace }} /home/azerothcore-wotlk
         # 验证路径
-        ls -d /home/azerothcore-wotlk
+        ls /home/azerothcore-wotlk
         echo "代码现在可以通过 /home/azerothcore-wotlk 访问了"
         echo "build-workspace-dir=/home/azerothcore-wotlk" >> "$GITHUB_OUTPUT"
         echo "build-output-dir=/home/azerothcore-wotlk/build" >> "$GITHUB_OUTPUT"
@@ -117,6 +117,13 @@ jobs:
         #-DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
         #-DCMAKE_C_FLAGS="-fdebug-prefix-map==${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
 
+    - name: Package Files SOURCE
+      # 进入目录并压缩
+      run: |
+        cd  ${{ steps.strings.outputs.build-workspace-dir }}
+        # 创建压缩包，包含时间戳以区分版本
+        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
+        
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
@@ -130,9 +137,6 @@ jobs:
     - name: Package Files
       # 进入目录并压缩
       run: |
-        cd  ${{ steps.strings.outputs.build-workspace-dir }}
-        # 创建压缩包，包含时间戳以区分版本
-        tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-all.tar.gz .
         cd  ${{ steps.strings.outputs.build-output-dir }} 
         # 创建压缩包，包含时间戳以区分版本
         tar -czvf ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz .
@@ -152,7 +156,7 @@ jobs:
         prerelease: false
         files: |
           ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-build.tar.gz
-          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-all.tar.gz .
+          ${{ github.workspace }}/azerothcore-arm64-${{ matrix.os }}-${{ matrix.cpp_compiler }}-source.tar.gz .
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
