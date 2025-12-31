@@ -50,7 +50,6 @@ jobs:
         # 定义所有模块列表 (格式：用户名/仓库名)
         REPOS="
         mod-playerbots/mod-playerbots
-        azerothcore/mod-ale
         azerothcore/mod-anticheat
         azerothcore/mod-aoe-loot
         webluke/mod-grownup
@@ -85,7 +84,13 @@ jobs:
         echo "------------------------------------------------------"
         echo "✅ 所有模块下载完成！内容如下："
         ls -l
-    
+
+        # 在循环中针对 mod-ale 特殊处理，或者单独克隆
+        git clone https://github.com/azerothcore/mod-ale.git mod-ale
+        cd mod-ale
+        git checkout fe30528 # 回滚到你截图显示的父提交 ID
+        cd ..
+
     - name: Install Requirements
       run: |
         sudo apt-get update 
@@ -119,6 +124,7 @@ jobs:
         -DSCRIPTS=static 
         -DMODULES=static
         -DENABLE_CCACHE=ON
+        -DBOOST_DYNAMIC=OFF
         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         -DCMAKE_C_COMPILER_LAUNCHER=ccache
         -DCMAKE_INSTALL_PREFIX=${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
