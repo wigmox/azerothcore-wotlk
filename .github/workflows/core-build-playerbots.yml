@@ -124,7 +124,8 @@ jobs:
         -DSCRIPTS=static 
         -DMODULES=static
         -DENABLE_CCACHE=ON
-        -DBOOST_DYNAMIC=OFF
+        -DBoost_USE_STATIC_LIBS=ON
+        -DBoost_USE_STATIC_RUNTIME=ON
         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         -DCMAKE_C_COMPILER_LAUNCHER=ccache
         -DCMAKE_INSTALL_PREFIX=${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
@@ -140,6 +141,28 @@ jobs:
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
         sudo ninja -C install
+
+    - name: Verify Static Linking
+      run: |
+        echo "------------------------------------------------------"
+        echo "🔍 正在检查 worldserver 的依赖项..."
+        
+        # 定义二进制文件路径
+        WORLDSERVER_PATH="${{ steps.strings.outputs.build-workspace-dir }}/env/dist/bin/worldserver"
+        
+        # 检查是否包含 boost 动态库引用
+        if ldd "$WORLDSERVER_PATH" | grep -qi "boost"; then
+          echo "❌ 警告: 发现动态链接的 Boost 库！程序可能无法在其他设备运行。"
+          ldd "$WORLDSERVER_PATH" | grep -i "boost"
+          # 如果你希望发现动态链接就停止 Action，可以取消下面这一行的注释
+          # exit 1 
+        else
+          echo "✅ 成功: 未发现 Boost 动态依赖，Boost 已静态嵌入。"
+        fi
+
+        echo "------------------------------------------------------"
+        echo "📦 完整的依赖列表如下："
+        ldd "$WORLDSERVER_PATH"
             
     - name: Package Files BIN
       run: |
