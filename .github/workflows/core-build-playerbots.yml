@@ -140,7 +140,7 @@ jobs:
     - name: Make install
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
-        sudo ninja -C install
+        sudo ninja -C ${{ steps.strings.outputs.build-output-dir }} install
 
     - name: Verify Static Linking
       run: |
