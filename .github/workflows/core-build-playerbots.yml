@@ -130,12 +130,22 @@ jobs:
         -DCMAKE_INSTALL_PREFIX=${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
         -DCMAKE_CXX_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
         -DCMAKE_C_FLAGS="-fdebug-prefix-map=${{ steps.strings.outputs.build-workspace-dir }}=/home/azerothcore-wotlk"
-        
+
+    - name: Ccache Stats Before
+      run: ccache -s
+    
     - name: Build
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache
       run: ninja -C ${{ steps.strings.outputs.build-output-dir }}
 
+    - name: Ccache Stats After
+      run: |
+        echo "------------------------------------------------------"
+        echo "📊 ccache 编译统计信息报告："
+        ccache -s
+        echo "------------------------------------------------------"
+      
     - name: Make install
       run: |
         cd ${{ steps.strings.outputs.build-output-dir }}
