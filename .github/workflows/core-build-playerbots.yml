@@ -128,7 +128,7 @@ jobs:
     - name: Build
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache
-      run: ninja --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
 
     - name: Make install
       run: |
