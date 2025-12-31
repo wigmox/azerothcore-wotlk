@@ -93,9 +93,12 @@ jobs:
 
     - name: Install Requirements
       run: |
-        sudo apt-get update 
-        sudo apt-get install -y git ninja-build cmake make libboost-all-dev lld gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev ccache
-
+        sudo apt-get update && sudo apt-get install -y \
+        git ninja-build cmake ccache lld clang \
+        libboost-all-dev libmysqlclient-dev libssl-dev \
+        libreadline-dev libncurses-dev liblzma-dev \
+        libbz2-dev zlib1g-dev
+  
     # 启用并优化缓存配置
     - name: Setup Cache for ccache
       uses: actions/cache@v4 # 建议使用 v4 版本
