@@ -94,7 +94,7 @@ jobs:
     - name: Install Requirements
       run: |
         sudo apt-get update 
-        sudo apt-get install -y git ninja-build cmake make gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev ccache
+        sudo apt-get install -y git ninja-build cmake make libboost-all-dev lld gcc g++ clang libmysqlclient-dev libssl-dev libbz2-dev libreadline-dev libncurses-dev mysql-server libboost-all-dev ccache
 
     # 启用并优化缓存配置
     - name: Setup Cache for ccache
@@ -115,9 +115,9 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
-        -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
-        -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld" \
+        -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+        -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
         -S ${{ steps.strings.outputs.build-workspace-dir }}
         -DWITH_WARNINGS=1 
         -DTOOLS_BUILD=all 
@@ -125,7 +125,6 @@ jobs:
         -DMODULES=static
         -DENABLE_CCACHE=ON
         -DBoost_USE_STATIC_LIBS=ON
-        -DBoost_USE_STATIC_RUNTIME=ON
         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         -DCMAKE_C_COMPILER_LAUNCHER=ccache
         -DCMAKE_INSTALL_PREFIX=${{ steps.strings.outputs.build-workspace-dir }}/env/dist/
