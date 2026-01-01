@@ -127,6 +127,7 @@ jobs:
         -DSCRIPTS=static 
         -DMODULES=static
         -DENABLE_CCACHE=ON
+        -DBoost_NO_BOOST_CMAKE=ON
         -DBoost_USE_STATIC_LIBS=ON
         -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         -DCMAKE_C_COMPILER_LAUNCHER=ccache
