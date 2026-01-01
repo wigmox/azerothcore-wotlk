@@ -22,7 +22,9 @@ jobs:
             build_type: Release
 
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.os }}-${{ matrix.cpp_compiler }}
+    # 【核心修改点】在这里添加容器配置
+    container:
+      image: debian:12-slim # 强制使用 Debian 12 环境以匹配你的 Armbian
 
     steps:
     - name: Checkout AzerothCore
