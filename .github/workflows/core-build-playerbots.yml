@@ -218,12 +218,6 @@ jobs:
       id: tag
       run: |
         echo "release_tag=build-${{ matrix.os }}-${{ matrix.cpp_compiler }}-$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: azerothcore-packages
-        path: ${{ github.workspace }}/assets/*.tar.gz
         
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v1
