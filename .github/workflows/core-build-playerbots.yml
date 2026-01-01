@@ -21,8 +21,8 @@ jobs:
             cpp_compiler: clang++
             build_type: Release
           - os: ubuntu-22.04-arm
-            c_compiler: clang
-            cpp_compiler: clang++
+            c_compiler: clang-20
+            cpp_compiler: clang++-20
             build_type: Release
 
     runs-on: ${{ matrix.os }}
@@ -97,8 +97,17 @@ jobs:
 
     - name: Install Requirements
       run: |
+        clang --version
+        sudo apt-get update
+        sudo apt-get install -y wget software-properties-common
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 20  # 安装 Clang 20
+        
+    - name: Install Requirements
+      run: |
         sudo apt-get update && sudo apt-get install -y \
-        git ninja-build cmake ccache lld clang \
+        git ninja-build cmake ccache lld \
         libboost-all-dev libmysqlclient-dev libssl-dev \
         libreadline-dev libncurses-dev liblzma-dev \
         libbz2-dev zlib1g-dev
