@@ -54,6 +54,7 @@ jobs:
         # 定义所有模块列表 (格式：用户名/仓库名)
         REPOS="
         mod-playerbots/mod-playerbots
+        azerothcore/mod-ale
         azerothcore/mod-anticheat
         azerothcore/mod-aoe-loot
         webluke/mod-grownup
@@ -90,10 +91,10 @@ jobs:
         ls -l
 
         # 在循环中针对 mod-ale 特殊处理，或者单独克隆
-        git clone https://github.com/azerothcore/mod-ale.git mod-ale
-        cd mod-ale
-        git checkout fe30528 # 回滚到你截图显示的父提交 ID
-        cd ..
+        # git clone https://github.com/azerothcore/mod-ale.git mod-ale
+        # cd mod-ale
+        # git checkout fe30528 # 回滚到你截图显示的父提交 ID
+        # cd ..
 
     - name: Install Requirements
       run: |
